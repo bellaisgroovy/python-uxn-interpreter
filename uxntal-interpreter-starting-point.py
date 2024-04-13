@@ -35,11 +35,11 @@ class T(Enum):
     REF = 4 # Address reference (rel=1, abs=2)
     RAW = 5 # Raw values (i.e. not literal)
     ADDR = 6 # Address (absolute padding)
-    PAD = 7 # Relative padding)
+    PAD = 7 # Relative padding
     EMPTY = 8 # Memory is filled with this by default
 
 # We use an object to group the data structures used by the Uxn interpreter
-class Uxn:
+class UxnMachine:
     memory = [(T.EMPTY,)] * 0x10000 # The memory stores *tokens*, not bare values
     stacks = ([],[]) # ws, rs # The stacks store bare values, i.e. bytes
     progCounter = 0
@@ -48,32 +48,32 @@ class Uxn:
     free = 0
 
 #!! Complete the parser
-def parseToken(tokenStr):
-    if tokenStr[0] == '#':
-        valStr=tokenStr[1:]
-        val = int(valStr,16)
-        if len(valStr)==2:
-            return (T.LIT,val,1)
+def parse_token(token_str):
+    if token_str[0] == '#':
+        val_str = token_str[1:]
+        val = int(val_str,16)
+        if len(val_str)==2:
+            return T.LIT,val,1
         else:
-            return (T.LIT,val,2)
-    if tokenStr[0] == '"':
-        chars =list(tokenStr[1:])
+            return T.LIT,val,2
+    if token_str[0] == '"':
+        chars =list(token_str[1:])
         return list(map(lambda c: (T.LIT, ord(c),1),chars))
-    elif tokenStr[0] == ';':
-        val = tokenStr[1:]
-        return (T.REF,val,2)
+    elif token_str[0] == ';':
+        val = token_str[1:]
+        return T.REF,val,2
 #!! Handle relative references `,&`
     # elif tokenStr[0] == ...
     #     ...
     #     return (T.REF,val,1)
-    elif tokenStr[0] == '@':
-        val = tokenStr[1:]
-        return (T.LABEL,val)
+    elif token_str[0] == '@':
+        val = token_str[1:]
+        return T.LABEL,val
 #!! Handle relative labels `&`
     # elif tokenStr[0] == ...
     #     ...
     #     return (...)
-    elif tokenStr == '|0100':
+    elif token_str == '|0100':
         return (T.MAIN,)
 #! Handle absolute padding (optional)
     # elif tokenStr[0] == ...
@@ -83,30 +83,30 @@ def parseToken(tokenStr):
     # elif tokenStr[0] == ...
     #     ...
     #     return (...)
-    elif tokenStr[0].isupper():
+    elif token_str[0].isupper():
         # Any token string starting with an uppercase letter is considered an instruction
-        if len(tokenStr) == 3:
-            return (T.INSTR,tokenStr[0:len(tokenStr)],1,0,0)
-        elif len(tokenStr) == 4:
-            if tokenStr[-1] == '2':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-1],2,0,0)
-            elif tokenStr[-1] == 'r':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-1],1,1,0)
-            elif tokenStr[-1] == 'k':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-1],1,0,1)
-        elif len(tokenStr) == 5:
+        if len(token_str) == 3:
+            return T.INSTR, token_str[0:len(token_str)], 1, 0, 0
+        elif len(token_str) == 4:
+            if token_str[-1] == '2':
+                return T.INSTR, token_str[0:len(token_str) - 1], 2, 0, 0
+            elif token_str[-1] == 'r':
+                return T.INSTR, token_str[0:len(token_str) - 1], 1, 1, 0
+            elif token_str[-1] == 'k':
+                return T.INSTR, token_str[0:len(token_str) - 1], 1, 0, 1
+        elif len(token_str) == 5:
             # Order must be size:stack:keep
-            if tokenStr[len(tokenStr)-2:len(tokenStr)] == '2r':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-2],2,1,0)
-            elif tokenStr[len(tokenStr)-2:len(tokenStr)] == '2k':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-2],2,0,1)
-            elif tokenStr[len(tokenStr)-2:len(tokenStr)] == 'rk':
-                return (T.INSTR,tokenStr[0:len(tokenStr)-2],1,1,1)
-        elif len(tokenStr) == 6:
-            return (T.INSTR,tokenStr[0:len(tokenStr)-1],2,1,1)
+            if token_str[len(token_str) - 2:len(token_str)] == '2r':
+                return T.INSTR, token_str[0:len(token_str) - 2], 2, 1, 0
+            elif token_str[len(token_str) - 2:len(token_str)] == '2k':
+                return T.INSTR, token_str[0:len(token_str) - 2], 2, 0, 1
+            elif token_str[len(token_str) - 2:len(token_str)] == 'rk':
+                return T.INSTR, token_str[0:len(token_str) - 2], 1, 1, 1
+        elif len(token_str) == 6:
+            return T.INSTR, token_str[0:len(token_str) - 1], 2, 1, 1
     else:
         # we assume this is a 'raw' byte or short
-        return (T.RAW,int(tokenStr,16))
+        return T.RAW,int(token_str, 16)
 
 
 # These are the actions related to the various Uxn instructions
@@ -129,7 +129,7 @@ def call(args,sz,uxn):
 def jump(args,sz,uxn):
     uxn.progCounter = args[0]
 # JCN
-def condJump(args,sz,uxn):
+def cond_jump(args, sz, uxn):
     if args[0] == 1:
         uxn.progCounter = args[0]-1
 
@@ -208,7 +208,7 @@ callInstr = {
     'DEO' : (lambda args,sz,uxn : print(chr(args[1]),end=''),2,False),
     'JSR' : (call,1,False),
     'JMP' : (jump,1,False),
-    'JCN' : (condJump,2,False),
+    'JCN' : (cond_jump, 2, False),
     'LDA' : (load,1,True),
     'STA' : (store,2,False),
     'STH' : (stash,0,False),
@@ -220,8 +220,8 @@ callInstr = {
 
 }
 
-def executeInstr(token,uxn):
-    _t,instr,sz,rs,keep = token
+def execute_instr(instr_token, uxn):
+    _t,instr,sz,rs,keep = instr_token
     if instr == 'BRK':
         if V:
             print("\n",'*** DONE *** ')
@@ -230,18 +230,18 @@ def executeInstr(token,uxn):
         if VV:
             print('PC:',uxn.pc,' (WS,RS):',uxn.stacks)
         exit(0)
-    action,nArgs,hasRes = callInstr[instr]
-    if nArgs==0: # means it is a stack manipulation
+    action,n_args,has_res = callInstr[instr]
+    if n_args==0: # means it is a stack manipulation
         action(rs,sz,uxn)
     else:
         # args=[]
-        # for i in reversed(range(0,nArgs)):
+        # for i in reversed(range(0,n_args)):
         #     if keep == 0:
         #         args.append(uxn.stacks[rs].pop())
         #     else:
         #         args.append(uxn.stacks[rs][i])
         args=[]
-        for i in reversed(range(0,nArgs)):
+        for i in reversed(range(0,n_args)):
             if keep == 0:
                 arg = uxn.stacks[rs].pop()
                 if arg[1]==2 and sz==1 and (instr != 'LDA' and instr!= 'STA'):
@@ -269,7 +269,7 @@ def executeInstr(token,uxn):
                     args.append(arg[0])
         if VV:
             print('EXEC INSTR:',instr, 'with args', args)
-        if hasRes:
+        if has_res:
             res = action(args,sz,uxn)
             if instr == 'EQU' or instr == 'NEQ' or instr == 'LTH' or instr == 'GTH':
                 uxn.stacks[rs].append( (res,1) )
@@ -278,33 +278,33 @@ def executeInstr(token,uxn):
         else:
             action(args,sz,uxn)
 
-#!! Tokenise the program text using a function `tokeniseProgramText`
+#!! Tokenize the program text using a function `tokenizeProgramText`
 #! That means splitting the string `programText` on whitespace
 #! You must remove any comments first, I suggest you use a helper function stripComments
 #! `tokenStrings` is a list of all tokens as strings
-def tokeniseProgramText(programText):
+def tokenize_program_text(program_text):
     #! ...
     return [] #! replace this with the actual code
 
 # This is the first pass of the assembly process
 # We store the tokens in memory and build a dictionary
 # uxn.symbolTable: label => address
-def populateMemoryAndBuildSymbolTable(tokens,uxn):
-    pc = 0
-    for token in tokens:
-        if token == (T.MAIN,):
-            pc = 0x0100
-        elif token[0] == T.ADDR:
-            pc = token[1]
-        elif token[0] == T.PAD: # relative only
-            pc = pc + token[1]
-        elif token[0] == T.LABEL:
-            labelName = token[1]
-            uxn.symbolTable[labelName]=pc
+def populate_memory_and_build_symbol_table(token_list, uxn):
+    prog_counter = 0
+    for token_item in token_list:
+        if token_item == (T.MAIN,):
+            prog_counter = 0x0100
+        elif token_item[0] == T.ADDR:
+            prog_counter = token_item[1]
+        elif token_item[0] == T.PAD: # relative only
+            prog_counter = prog_counter + token_item[1]
+        elif token_item[0] == T.LABEL:
+            label_name = token_item[1]
+            uxn.symbolTable[label_name]=prog_counter
         else:
-            uxn.memory[pc]=token
-            pc = pc + 1
-    uxn.free = pc
+            uxn.memory[prog_counter]=token_item
+            prog_counter = prog_counter + 1
+    uxn.free = prog_counter
 
 # Once the symbol table has been built, replace every symbol by its address
 #!! Implement the code to replace every label reference by an address
@@ -318,10 +318,10 @@ def populateMemoryAndBuildSymbolTable(tokens,uxn):
 # Running the program mean setting the program counter `uxn.progCounter` to the address of the first token;
 #  - read the token from memory at that address
 # - if the token is a LIT, its *value* goes on the working stack
-# - otherwise it is an instruction and it is executed using `executeInstr(token,uxn)`
+# - otherwise it is an instruction, and it is executed using `executeInstr(token,uxn)`
 # - then we increment the program counter
 #!! Implement the above functionality
-def runProgram(uxn):
+def run_program(uxn):
     if VV:
         print('*** RUNNING ***')
     uxn.progCounter = 0x100 # all programs must start at 0x100
@@ -342,10 +342,10 @@ def runProgram(uxn):
         if DBG:
             print('(WS,RS):',uxn.stacks)
 
-uxn = Uxn()
+uxnMachine = UxnMachine()
 programText_noComments = stripComments(programText):
-tokenStrings = tokeniseProgramText(programText_noComments)
-tokensWithStrings = map(parseToken,tokenStrings)
+tokenStrings = tokenize_program_text(programText_noComments)
+tokensWithStrings = map(parse_token, tokenStrings)
 
 tokens=[]
 for item in tokensWithStrings:
@@ -355,16 +355,16 @@ for item in tokensWithStrings:
     else:
         tokens.append(item)
 
-populateMemoryAndBuildSymbolTable(tokens,uxn)
+populate_memory_and_build_symbol_table(tokens, uxnMachine)
 
-resolveSymbols(uxn)
+resolveSymbols(uxnMachine)
 
 if DBG:
-    for pc in range(256,uxn.free):
-        print(pc,':',uxn.memory[pc])
+    for pc in range(256, uxnMachine.free):
+        print(pc,':', uxnMachine.memory[pc])
     print('')
 if VV:
     print(programText)
 
-runProgram(uxn)
+run_program(uxnMachine)
 

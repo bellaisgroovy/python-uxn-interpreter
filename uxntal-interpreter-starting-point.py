@@ -281,6 +281,32 @@ def execute_instr(instr_token, uxn):
 #!! Tokenize the program text using a function `tokenizeProgramText`
 #! That means splitting the string `programText` on whitespace
 #! You must remove any comments first, I suggest you use a helper function stripComments
+def find_all(a_str, sub) -> list:
+    occurences = [] # will hold index of start of all occurences
+
+    found_all = False
+    start = 0
+    while not found_all:
+        start = a_str.find(sub, start) # returns -1 if not found
+        if start == -1:
+            found_all = True
+        else:
+            occurences.append(start)
+        start += len(sub)
+    return occurences
+def strip_comments(program_text): # find the index of every open and close bracket, then remove the space between them (inclusive)
+    stripped = ""
+    # find location of all brackets
+    comment_starts = find_all(program_text, "(") + [len(program_text)-1]
+    comment_ends = [0] + find_all(program_text, ")")
+
+    # remove content between them (inclusive)
+    for index in range(len(comment_starts)):
+        start = comment_ends[index]
+        end = comment_starts[index]
+        stripped += program_text[start+1:end]
+    return stripped
+
 #! `tokenStrings` is a list of all tokens as strings
 def tokenize_program_text(program_text):
     #! ...

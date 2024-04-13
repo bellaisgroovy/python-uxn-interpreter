@@ -1,0 +1,25 @@
+( This is an example of how to call a subroutine, which is like a method in Java )
+( The subroutine will compute the sum of the squares of two shorts (16-bit integers) )
+|0100
+
+#0004 #0003 ( put 4 and 3 on the stack )
+;sum-sq ( put the address of the subroutine on the stack, this is like the name of a method in Java )
+JSR2 ( jump to this address and store the current address so we can return to it, so this is like a method call in Java )
+( the result is 25, #0019 in hex )
+
+( we can call subroutines as many times as we like )
+#0002 #0003 ;sum-sq JSR2 ( this will return 13, #000d on the stack )
+
+ADD2 #18 DEO ( prints '&' because 25+13=38 and that is the ASCII code for '&' )
+
+
+BRK
+
+( x:16 -> y:16 -> res:16 )
+@sum-sq
+    DUP2 MUL2 ( x y*y )
+    SWP2 ( y*y x )
+    DUP2 MUL2 ( y*y x*x )
+    ADD2 ( y*y + x*x )
+    JMP2r ( jump to the stored address, this is like return in Java but the returned value is on the stack )
+

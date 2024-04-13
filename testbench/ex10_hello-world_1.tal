@@ -1,0 +1,25 @@
+( A Hello World example )
+|0100
+
+	;hello_world
+
+	&while
+		DUP2 LDA #18 DEO ( what we do here is read a character from the string and print it
+        But the 'k' means we keep the address on the stack as well )
+		INC2 DUP2 LDA ( we increment the address and load it to get the next character.
+        Again we keep the address on the stack )
+        #00 NEQ ( so we test if the character value is not equal to zero )
+        ,&while JCN ( JCN means "jump with condition, it means we go back to the label &while as long as the condition is true. The last character in the string is a zero byte, so when we read that the condition is false and we finish )
+	POP2 ( clean up the stack )
+
+
+
+BRK
+
+( Constant strings are usually stored with a label like this )
+( In Java this would be 
+
+public static final String hello_world = "Hello, World!";
+
+The reason for the 20 is that in Uxntal, you can't have a space in a string, so you need to write the ASCII value for the space instead. )
+@hello_world "Hello, 20 "World! 00

@@ -28,15 +28,15 @@ JMP2r
 
 # These are the different types of tokens
 class T(Enum):
-    MAIN = 0
-    LIT = 1
-    INSTR = 2
-    LABEL = 3
-    REF = 4
-    RAW = 5
-    ADDR = 6
-    PAD = 7
-    EMPTY = 8
+    MAIN = 0 # Main program
+    LIT = 1 # Literal
+    INSTR = 2 # Instruction
+    LABEL = 3 # Label
+    REF = 4 # Address reference (rel=1, abs=2)
+    RAW = 5 # Raw values (i.e. not literal)
+    ADDR = 6 # Address (absolute padding)
+    PAD = 7 # Relative padding)
+    EMPTY = 8 # Memory is filled with this by default
 
 # We use an object to group the data structures used by the Uxn interpreter
 class Uxn:
@@ -46,7 +46,6 @@ class Uxn:
     symbolTable={}
     # First unused address, only used for verbose
     free = 0
-
 
 #!! Complete the parser
 def parseToken(tokenStr):
@@ -80,7 +79,7 @@ def parseToken(tokenStr):
     # elif tokenStr[0] == ...
     #     ...
     #     return (...)
-#! Handle relative padding (optional)
+#! Handle relative padding
     # elif tokenStr[0] == ...
     #     ...
     #     return (...)
@@ -139,7 +138,7 @@ def condJump(args,sz,uxn):
 def stash(rs,sz,uxn):
     uxn.stacks[1-rs].append(uxn.stacks[rs].pop())
 
-#!! Implement POP
+#!! Implement POP (look at `swap`)
 #! def pop(rs,sz,uxn):
     #! ...
 
@@ -168,7 +167,7 @@ def nip(rs,sz,uxn): # a b -> b
             print("Error: Args on stack for NIP",sz,"are of wrong size")
             exit()
 
-#!! Implement ROT
+#!! Implement ROT (look at `swap`)
 #! def rot(rs,sz,uxn): # a b c -> b c a
     #! ...
 
@@ -185,7 +184,7 @@ def over(rs,sz,uxn): # a b -> a b a
 def add(args,sz,uxn):
     return args[0] + args[1]
 
-#!! Implement SUB, MUL, DIV, INC
+#!! Implement SUB, MUL, DIV, INC (similar to `ADD`)
 #! def sub(args,sz,uxn):
 #!    ...
 # def mul(args,sz,uxn):
@@ -193,7 +192,7 @@ def add(args,sz,uxn):
 # def div(args,sz,uxn):
 #!    ...
 
-#!! Implement EQU, NEQ, LTH, GTH
+#!! Implement EQU, NEQ, LTH, GTH (similar to `ADD`)
 #! def equ(args,sz,uxn):
 #!    ...
 # def neq(args,sz,uxn):
@@ -297,7 +296,7 @@ def populateMemoryAndBuildSymbolTable(tokens,uxn):
             pc = 0x0100
         elif token[0] == T.ADDR:
             pc = token[1]
-        elif token[0] == T.PAD:
+        elif token[0] == T.PAD: # relative only
             pc = pc + token[1]
         elif token[0] == T.LABEL:
             labelName = token[1]
@@ -331,7 +330,8 @@ def runProgram(uxn):
         #! token = ...
         if DBG:
             print('PC:',uxn.progCounter,' TOKEN:',token)
-        #! You can use an if/elif if you prefer
+        #! You can use an if/elif if you prefer; there are only two cases (and an optional third to catch potential errors)
+        #! because the program at this point consists entirely of instructions and literals
         #! match ...:
         #!     case ...:
         #!         ...

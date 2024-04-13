@@ -1,0 +1,9 @@
+|0100 ( every program starts at address 256 )
+
+#0006 ( put 6 on the stack as a 2-byte )
+DUP2 ( duplicate, so there are now two values on the stack, both 6 )
+INC2 ( increment the value on the top of the stack, so 6+1 )
+MUL2 ( multiply the value on the top of the stack, 6, with the value below that, 7 )
+#18 DEO ( prints '*' in the terminal, because 42 is the ASCII code for '*' )
+( DEO means 'device output' and #18 is the output port for the terminal, like StdOut in Java )
+BRK

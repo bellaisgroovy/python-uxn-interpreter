@@ -1,0 +1,42 @@
+|0100
+
+;write_array
+#0010 ;loop JSR2
+;array LDA2 #30 ADD #18 DEO
+
+BRK
+( niters:16 -> -- )
+@loop
+    ( loop with incrementing counter starting at 1, ending at n )
+    #0000 ( action n #0000 )
+    &for
+    ( DUP #30 ADD #18 DEO  )
+    ( action n #0000 )
+    INC2 ( increment ; action n #0001 )
+    ROT2 ( n  #0001 action )
+    OVR2 OVR2 ( n #0001 action #0001 action )
+    ( POP2 POP2  )
+    JSR2
+    ( n #0001 action )
+    ROT2 ROT2 ( action n #0001 )
+    OVR2 OVR2  ( action n #0001 n #0001 )
+    ( the comparison also consumes the counter )
+    NEQ2 ,&for JCN
+    POP2 POP2 POP2
+    JMP2r
+
+BRK
+( example action, consumes a single argument from the stack )
+( cnt:16 -> -- )
+( we write the value of count to @array )
+@write_array
+
+    DUP2 #0002 MUL2
+    ;array ADD2 #0002 SUB2 STA2
+    JMP2r
+
+
+|0200
+@array $10
+
+

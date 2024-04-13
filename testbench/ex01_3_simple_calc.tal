@@ -1,0 +1,13 @@
+|0100 ( every program starts at address 256 )
+
+#0006 ;x STA2k ( put 6 on the stack as a 2-byte constant.
+Store it in x and keep the arguments, so now #0006 and x are on the stack )
+LDA2  ( load x, this puts #0006 on the stack )
+INC2 ( increment, so +1, so #0007 )
+MUL2 ( multiply the value on the top of the stack, 6, with the value below that, 7 )
+#18 DEO ( prints '*' in the terminal, because 42 is the ASCII code for '*' )
+( DEO means 'device output' and #18 is the output port for the terminal, like StdOut in Java )
+
+BRK
+
+@x $2

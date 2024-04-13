@@ -1,0 +1,10 @@
+( Example that calculates 6*7 using 8-bit integers, byte in Java )
+|0100 ( every program starts at address 256 )
+
+#06 ( put 6 on the stack as a byte )
+DUP ( duplicate, so there are now two values on the stack, both 6 )
+INC ( increment the value on the top of the stack, so 6+1 )
+MUL ( multiply the value on the top of the stack, 6, with the value below that, 7 )
+#18 DEO ( prints '*' in the terminal, because 42 is the ASCII code for '*' )
+( DEO means 'device output' and #18 is the output port for the terminal, like StdOut in Java )
+BRK

@@ -66,16 +66,16 @@ def parse_token(token_str):
         val = token_str[1:]
         return T.REF, val, 2
     # !! Handle relative references `,&`
-    # elif tokenStr[0] == ...
-    #     ...
-    #     return (T.REF,val,1)
+    elif token_str[0:2] == ',&':
+        val = token_str[2:]
+        return T.REF, val, 1
     elif token_str[0] == '@':
         val = token_str[1:]
         return T.LABEL, val
     # !! Handle relative labels `&`
-    # elif tokenStr[0] == ...
-    #     ...
-    #     return (...)
+    elif token_str[0] == '&':
+        val = token_str[1:]
+        return T.LABEL, val
     elif token_str == '|0100':
         return (T.MAIN,)
     # ! Handle absolute padding (optional)
@@ -83,9 +83,9 @@ def parse_token(token_str):
     #     ...
     #     return (...)
     # ! Handle relative padding
-    # elif tokenStr[0] == ...
-    #     ...
-    #     return (...)
+    elif token_str[0] == '$':
+        val = token_str[1:]
+        return T.PAD, val
     elif token_str[0].isupper():
         # Any token string starting with an uppercase letter is considered an instruction
         if len(token_str) == 3:
@@ -151,7 +151,7 @@ def stash(rs, sz, uxn):
 
 
 # !! Implement POP (look at `swap`)
-def pop(rs,sz,uxn):
+def pop(rs, sz, uxn):
     uxn.stacks[rs].pop()
 
 
@@ -183,13 +183,14 @@ def nip(rs, sz, uxn):  # a b -> b
 
 
 # !! Implement ROT (look at `swap`)
-def rot(rs,sz,uxn): # a b c -> b c a
+def rot(rs, sz, uxn):  # a b c -> b c a
     c = uxn.stacks[rs].pop()
     b = uxn.stacks[rs].pop()
     a = uxn.stacks[rs].pop()
     uxn.stacks[rs].append(b)
     uxn.stacks[rs].append(c)
     uxn.stacks[rs].append(a)
+
 
 def dup(rs, sz, uxn):
     a = uxn.stacks[rs][-1]
@@ -208,37 +209,38 @@ def add(args, sz, uxn):
 
 
 # !! Implement SUB, MUL, DIV, INC (similar to `ADD`)
-def sub(args,sz,uxn):
+def sub(args, sz, uxn):
     return args[0] - args[1]
 
 
-def mul(args,sz,uxn):
+def mul(args, sz, uxn):
     return args[0] * args[1]
 
 
-def div(args,sz,uxn):
+def div(args, sz, uxn):
     return args[0] // args[1]
 
 
-def inc(rs,sz,uxn):  # TODO this isn't how its suggested to implement it
+def inc(rs, sz, uxn):  # TODO this isn't how its suggested to implement it
     uxn.stacks[rs] += 1
 
 
 # !! Implement EQU, NEQ, LTH, GTH (similar to `ADD`)
-def equ(args,sz,uxn):
+def equ(args, sz, uxn):
     return args[0] == args[1]
 
 
-def neq(args,sz,uxn):
+def neq(args, sz, uxn):
     return args[0] != args[1]
 
 
-def lth(args,sz,uxn):
+def lth(args, sz, uxn):
     return args[0] < args[1]
 
 
-def gth(args,sz,uxn):
+def gth(args, sz, uxn):
     return args[0] > args[1]
+
 
 callInstr = {
     # !! Add SUB, MUL, DIV, INC; EQU, NEQ, LTH, GTH
@@ -330,18 +332,18 @@ def execute_instr(instr_token, uxn):
 # !! Tokenize the program text using a function `tokenizeProgramText`
 # ! That means splitting the string `programText` on whitespace
 # ! You must remove any comments first, I suggest you use a helper function stripComments
-def find_all(a_str, sub) -> list:
+def find_all(a_str, sub_str) -> list:
     occurrences = []  # will hold index of start of all occurrences
 
     found_all = False
     start = 0
     while not found_all:
-        start = a_str.find(sub, start)  # returns -1 if not found
+        start = a_str.find(sub_str, start)  # returns -1 if not found
         if start == -1:
             found_all = True
         else:
             occurrences.append(start)
-        start += len(sub)
+        start += len(sub_str)
     return occurrences
 
 

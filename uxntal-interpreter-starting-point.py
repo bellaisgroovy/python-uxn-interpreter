@@ -151,8 +151,9 @@ def stash(rs, sz, uxn):
 
 
 # !! Implement POP (look at `swap`)
-# ! def pop(rs,sz,uxn):
-# ! ...
+def pop(rs,sz,uxn):
+    uxn.stacks[rs].pop()
+
 
 # SWP
 def swap(rs, sz, uxn):
@@ -182,8 +183,13 @@ def nip(rs, sz, uxn):  # a b -> b
 
 
 # !! Implement ROT (look at `swap`)
-# ! def rot(rs,sz,uxn): # a b c -> b c a
-# ! ...
+def rot(rs,sz,uxn): # a b c -> b c a
+    c = uxn.stacks[rs].pop()
+    b = uxn.stacks[rs].pop()
+    a = uxn.stacks[rs].pop()
+    uxn.stacks[rs].append(b)
+    uxn.stacks[rs].append(c)
+    uxn.stacks[rs].append(a)
 
 def dup(rs, sz, uxn):
     a = uxn.stacks[rs][-1]
@@ -195,33 +201,56 @@ def over(rs, sz, uxn):  # a b -> a b a
     uxn.stacks[rs].append(a)
 
 
-# ALU operations
+# ALU operations TODO assumption that args[0] is lowest on stack
 # ADD
 def add(args, sz, uxn):
     return args[0] + args[1]
 
 
 # !! Implement SUB, MUL, DIV, INC (similar to `ADD`)
-# ! def sub(args,sz,uxn):
-# !    ...
-# def mul(args,sz,uxn):
-# !    ...
-# def div(args,sz,uxn):
-# !    ...
+def sub(args,sz,uxn):
+    return args[0] - args[1]
+
+
+def mul(args,sz,uxn):
+    return args[0] * args[1]
+
+
+def div(args,sz,uxn):
+    return args[0] // args[1]
+
+
+def inc(rs,sz,uxn):  # TODO this isn't how its suggested to implement it
+    uxn.stacks[rs] += 1
+
 
 # !! Implement EQU, NEQ, LTH, GTH (similar to `ADD`)
-# ! def equ(args,sz,uxn):
-# !    ...
-# def neq(args,sz,uxn):
-# !    ...
-# def lth(args,sz,uxn):
-# !    ...
-# def gth(args,sz,uxn):
-# !    ...
+def equ(args,sz,uxn):
+    return args[0] == args[1]
+
+
+def neq(args,sz,uxn):
+    return args[0] != args[1]
+
+
+def lth(args,sz,uxn):
+    return args[0] < args[1]
+
+
+def gth(args,sz,uxn):
+    return args[0] > args[1]
 
 callInstr = {
     # !! Add SUB, MUL, DIV, INC; EQU, NEQ, LTH, GTH
     'ADD': (add, 2, True),
+    'SUB': (sub, 2, True),
+    'MUL': (mul, 2, True),
+    'DIV': (div, 2, True),
+    'INC': (inc, 0, False),
+    'EQU': (equ, 2, True),
+    'NEQ': (neq, 2, True),
+    'LTH': (lth, 2, True),
+    'GTH': (gth, 2, True),
     'DEO': (lambda args, sz, uxn: print(chr(args[1]), end=''), 2, False),
     'JSR': (call, 1, False),
     'JMP': (jump, 1, False),
@@ -232,9 +261,10 @@ callInstr = {
     'DUP': (dup, 0, False),
     'SWP': (swap, 0, False),
     'OVR': (over, 0, False),
-    'NIP': (nip, 0, False)
+    'NIP': (nip, 0, False),
     # !! Add POP, ROT
-
+    'POP': (nip, 0, False),
+    'ROT': (rot, 0, False),
 }
 
 
@@ -263,7 +293,7 @@ def execute_instr(instr_token, uxn):
             if keep == 0:
                 arg = uxn.stacks[rs].pop()
                 if arg[1] == 2 and sz == 1 and (instr != 'LDA' and instr != 'STA'):
-                    if WW:
+                    if VV:
                         print("Warning: Args on stack for", instr, sz, "are of wrong size (short for byte)")
                     uxn.stacks[rs].append((arg[0] >> 8))
                     args.append((arg[0] & 0xFF))
